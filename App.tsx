@@ -31,7 +31,6 @@ const App: React.FC = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const activeSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
-  // Initialize Audio Context on first interaction
   const initAudio = () => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({
@@ -49,17 +48,17 @@ const App: React.FC = () => {
         await (window as any).aistudio.openSelectKey();
         setNeedsApiKey(false);
         setFeedback(null);
+        // Prompt for immediate start after key selection
+        setFeedback({ type: 'info', message: 'API key updated. You can now start the round.' });
       }
     } catch (err) {
       console.error("Failed to open key selector", err);
     }
   };
 
-  // Logic: Generating a new number
   const startNewRound = useCallback(async () => {
     initAudio();
     
-    // Validate range
     if (minRange > maxRange) {
       setFeedback({ type: 'error', message: 'Invalid range: Minimum cannot be greater than maximum.' });
       return;
@@ -85,16 +84,22 @@ const App: React.FC = () => {
       const errorMessage = error?.message || "An unknown error occurred.";
       console.error("Round Start Error:", error);
       
-      if (errorMessage.includes("Requested entity was not found") || errorMessage.includes("API_KEY")) {
+      // Handle the specific error indicating an API key issue or quota problem
+      if (errorMessage.includes("Requested entity was not found") || 
+          errorMessage.includes("API_KEY") || 
+          errorMessage.includes("401") ||
+          errorMessage.includes("403")) {
         setNeedsApiKey(true);
         setFeedback({ 
           type: 'error', 
-          message: 'The API key is missing or invalid for this model. Please select a valid API key from a paid project.' 
+          message: 'The model requires a valid API key from a paid project. Please select or refresh your key.' 
         });
       } else {
         setFeedback({ 
           type: 'error', 
-          message: `API Error: ${errorMessage}` 
+          message: errorMessage.includes("non-audio response") 
+            ? "Gemini attempted to reply with text instead of speech. Retrying usually helps."
+            : `API Error: ${errorMessage}` 
         });
       }
       setCurrentNumber(null);
@@ -103,11 +108,9 @@ const App: React.FC = () => {
     }
   }, [minRange, maxRange, language, voice]);
 
-  // Logic: Playing/Replaying the audio
   const playAudio = (buffer: AudioBuffer) => {
     if (!audioContextRef.current) return;
 
-    // Stop existing audio
     if (activeSourceRef.current) {
       try { activeSourceRef.current.stop(); } catch(e) {}
     }
@@ -120,19 +123,15 @@ const App: React.FC = () => {
     activeSourceRef.current = source;
   };
 
-  // Logic: Submitting an answer
   const handleSubmit = () => {
     if (currentNumber === null) return;
     if (isScored) {
-      setFeedback({ type: 'info', message: 'This round is already scored. Start a new round to continue!' });
+      setFeedback({ type: 'info', message: 'Round already scored. Try a new one!' });
       return;
     }
 
     const trimmedInput = userInput.trim();
-    if (trimmedInput === '') {
-       setFeedback({ type: 'error', message: 'Please enter a number before submitting.' });
-       return;
-    }
+    if (trimmedInput === '') return;
 
     const parsedInput = parseInt(trimmedInput);
     const isCorrect = parsedInput === currentNumber;
@@ -146,32 +145,31 @@ const App: React.FC = () => {
     setFeedback({
       type: isCorrect ? 'success' : 'error',
       message: isCorrect 
-        ? `Correct! The number was indeed ${currentNumber}.` 
-        : `Incorrect. The spoken number was ${currentNumber}.`
+        ? `Perfect! It was ${currentNumber}.` 
+        : `Nope! The number spoken was ${currentNumber}.`
     });
   };
 
-  // Logic: Setting changes reset the round (Anti-Cheat)
   useEffect(() => {
     setCurrentNumber(null);
     setCurrentAudioBuffer(null);
     setUserInput('');
     setIsScored(false);
     setFeedback(null);
-  }, [language, minRange, maxRange]);
+  }, [language, minRange, maxRange, voice]);
 
   return (
-    <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
-      <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="min-h-screen p-4 md:p-8 flex items-center justify-center bg-slate-50">
+      <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Sidebar Settings */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="mb-2">
-            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-              Polyglot <span className="text-indigo-600">Numbers</span>
+        <div className="lg:col-span-4 flex flex-col gap-6 lg:sticky lg:top-8">
+          <div className="px-2">
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
+              Polyglot <span className="text-indigo-600 block sm:inline">Numbers</span>
             </h1>
-            <p className="text-slate-500 mt-2 leading-relaxed text-sm">
-              Master hearing numbers in foreign languages with high-fidelity TTS.
+            <p className="text-slate-500 mt-3 text-sm font-medium">
+              Listen, understand, and master hearing numbers in any language.
             </p>
           </div>
 
@@ -189,96 +187,97 @@ const App: React.FC = () => {
             isGenerating={isGenerating}
           />
 
-          <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
-             <h4 className="text-indigo-900 font-bold text-sm mb-1 flex items-center gap-2">
-               <i className="fa-solid fa-circle-info"></i> How it works
+          <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+             <h4 className="text-slate-900 font-bold text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
+               <i className="fa-solid fa-graduation-cap text-indigo-500"></i> Learning Tips
              </h4>
-             <ul className="text-indigo-700 text-[11px] space-y-1.5 opacity-90 leading-tight">
-               <li>• Start a round to hear a random number.</li>
-               <li>• Listen carefully and type the number.</li>
-               <li>• You can replay the number as many times as you like.</li>
-               <li>• Every round can be scored exactly once.</li>
+             <ul className="text-slate-600 text-xs space-y-2.5 leading-relaxed">
+               <li><span className="font-semibold text-slate-800">Range Control:</span> Start with 1-10 to learn basics, then expand to 1-1000.</li>
+               <li><span className="font-semibold text-slate-800">Speed Adjust:</span> Use 0.5x if you are struggling with fast pronunciations.</li>
+               <li><span className="font-semibold text-slate-800">Replay often:</span> There is no penalty for re-listening before you submit.</li>
              </ul>
           </div>
         </div>
 
-        {/* Main Interaction Area */}
-        <main className="lg:col-span-8 flex flex-col">
+        {/* Main Area */}
+        <main className="lg:col-span-8 flex flex-col h-full">
           <StatsTracker stats={stats} />
 
-          <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 flex-1 flex flex-col justify-center items-center text-center">
+          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-white p-6 md:p-12 flex-1 flex flex-col justify-center items-center relative overflow-hidden">
+            {/* Background Accent */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 opacity-50 blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-50 rounded-full -ml-24 -mb-24 opacity-50 blur-3xl"></div>
+
             {needsApiKey ? (
-              <div className="py-12">
-                <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500 text-3xl">
+              <div className="py-8 relative z-10">
+                <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-rose-600 text-3xl rotate-3 shadow-lg shadow-rose-100">
                   <i className="fa-solid fa-key"></i>
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800 mb-2">API Key Required</h2>
-                <p className="text-slate-500 mb-8 max-w-sm mx-auto text-sm">
-                  This tool requires a valid API key from a paid project to access Gemini TTS models.
+                <p className="text-slate-500 mb-8 max-w-sm mx-auto text-sm leading-relaxed">
+                  The high-fidelity TTS models require an API key associated with a paid Google Cloud project.
                 </p>
                 <button
                   onClick={handleOpenSelectKey}
-                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-rose-100"
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-10 rounded-2xl transition-all shadow-xl shadow-slate-200 active:scale-95"
                 >
-                  Select API Key
+                  Configure API Key
                 </button>
-                <p className="mt-4 text-xs text-slate-400">
-                  Documentation: <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="underline">ai.google.dev/gemini-api/docs/billing</a>
-                </p>
+                <div className="mt-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                  <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="hover:text-indigo-600 transition-colors">Billing Documentation ↗</a>
+                </div>
               </div>
             ) : !currentNumber && !isGenerating ? (
-              <div className="py-12">
-                <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-400 text-4xl shadow-inner">
-                  <i className="fa-solid fa-play"></i>
+              <div className="py-12 relative z-10">
+                <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-3xl flex items-center justify-center mx-auto mb-8 text-white text-4xl shadow-2xl shadow-indigo-200 transform rotate-6">
+                  <i className="fa-solid fa-play ml-1"></i>
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800 mb-2">Ready to Start?</h2>
-                <p className="text-slate-500 mb-8 max-w-xs mx-auto">
-                  Click below to generate a random number in <strong>{language.name}</strong>.
+                <h2 className="text-3xl font-black text-slate-800 mb-3">Begin Round</h2>
+                <p className="text-slate-500 mb-10 max-w-xs mx-auto font-medium">
+                  Practice hearing numbers in <span className="text-indigo-600">{language.name}</span>.
                 </p>
                 <button
                   onClick={startNewRound}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-2xl shadow-xl shadow-indigo-100 transition-all transform hover:-translate-y-1 active:scale-95 text-lg"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-5 px-12 rounded-2xl shadow-2xl shadow-indigo-200 transition-all transform hover:-translate-y-1 active:scale-95 text-xl"
                 >
-                  Start Round
+                  Start Now
                 </button>
               </div>
             ) : isGenerating ? (
-              <div className="py-12">
-                <div className="relative w-16 h-16 mx-auto mb-6">
-                   <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
-                   <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
+              <div className="py-12 relative z-10">
+                <div className="w-16 h-16 mx-auto mb-8 relative">
+                   <div className="absolute inset-0 rounded-full border-[6px] border-indigo-50"></div>
+                   <div className="absolute inset-0 rounded-full border-[6px] border-indigo-600 border-t-transparent animate-spin"></div>
                 </div>
-                <h2 className="text-xl font-bold text-slate-700">Speaking...</h2>
-                <p className="text-slate-400 mt-2 text-sm">Generating audio via Gemini API</p>
+                <h2 className="text-2xl font-bold text-slate-800">Generating Audio...</h2>
+                <p className="text-slate-400 mt-3 font-medium animate-pulse">Requesting voice synthesis</p>
               </div>
             ) : (
-              <div className="w-full max-w-md">
-                <div className="mb-10">
+              <div className="w-full max-w-sm relative z-10">
+                <div className="mb-12">
                   <button
                     onClick={() => currentAudioBuffer && playAudio(currentAudioBuffer)}
-                    className="group relative w-24 h-24 bg-indigo-50 hover:bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300 shadow-sm"
+                    className="group relative w-32 h-32 bg-slate-50 hover:bg-indigo-600 rounded-full flex items-center justify-center mx-auto transition-all duration-500 shadow-inner border-8 border-white"
                   >
-                    <i className="fa-solid fa-volume-high text-3xl text-indigo-600 group-hover:text-white transition-colors"></i>
-                    <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">
-                      Replay
+                    <i className="fa-solid fa-volume-high text-4xl text-indigo-600 group-hover:text-white transition-colors"></i>
+                    <div className="absolute inset-0 rounded-full border-2 border-indigo-100 group-hover:scale-110 group-hover:opacity-0 transition-all duration-500"></div>
+                    <span className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">
+                      Replay Number
                     </span>
                   </button>
                 </div>
 
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-left text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      Your Answer
-                    </label>
+                <div className="space-y-8">
+                  <div className="relative">
                     <input
                       type="number"
                       value={userInput}
                       onChange={(e) => setUserInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                      placeholder="?"
+                      placeholder="Enter the digits..."
                       disabled={isScored}
                       autoFocus
-                      className="w-full text-4xl font-bold py-4 px-6 rounded-2xl border-2 border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none text-center transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                      className="w-full text-5xl font-black py-6 px-4 rounded-3xl border-2 border-slate-100 focus:border-indigo-500 focus:ring-[12px] focus:ring-indigo-50 outline-none text-center transition-all disabled:bg-slate-50 disabled:text-slate-300 placeholder:text-slate-200 placeholder:font-bold"
                     />
                   </div>
 
@@ -286,40 +285,46 @@ const App: React.FC = () => {
                     <button
                       onClick={startNewRound}
                       disabled={isGenerating}
-                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-all"
+                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl transition-all active:scale-95"
                     >
-                      New Round
+                      Skip
                     </button>
                     <button
                       onClick={handleSubmit}
                       disabled={isScored || isGenerating || !userInput}
-                      className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-100 transition-all disabled:bg-slate-300 disabled:shadow-none"
+                      className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-100 transition-all disabled:bg-slate-300 disabled:shadow-none active:scale-95"
                     >
-                      Check Answer
+                      Submit Answer
                     </button>
                   </div>
                 </div>
 
                 {feedback && (
-                  <div className={`mt-8 p-5 rounded-2xl text-sm font-medium animate-in fade-in slide-in-from-bottom-2 duration-300 border ${
+                  <div className={`mt-10 p-6 rounded-3xl text-sm font-semibold animate-in fade-in zoom-in-95 duration-500 border-2 ${
                     feedback.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                     feedback.type === 'error' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                    'bg-sky-50 text-sky-700 border-sky-100'
+                    'bg-slate-50 text-slate-700 border-slate-100'
                   }`}>
-                    <div className="flex items-start gap-3">
-                      <i className={`fa-solid mt-0.5 ${
-                        feedback.type === 'success' ? 'fa-circle-check text-emerald-500' :
-                        feedback.type === 'error' ? 'fa-circle-exclamation text-rose-500' :
-                        'fa-circle-info text-sky-500'
-                      } text-lg`}></i>
-                      <p className="text-left flex-1">{feedback.message}</p>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${
+                         feedback.type === 'success' ? 'bg-emerald-500 text-white' :
+                         feedback.type === 'error' ? 'bg-rose-500 text-white' :
+                         'bg-slate-500 text-white'
+                      }`}>
+                        <i className={`fa-solid ${
+                          feedback.type === 'success' ? 'fa-check' :
+                          feedback.type === 'error' ? 'fa-xmark' :
+                          'fa-info'
+                        }`}></i>
+                      </div>
+                      <p className="text-left flex-1 leading-snug">{feedback.message}</p>
                     </div>
                     {isScored && (
                       <button 
                         onClick={startNewRound}
-                        className="mt-4 w-full py-2 bg-white/50 hover:bg-white text-indigo-600 rounded-lg font-bold transition-all border border-indigo-100"
+                        className="mt-5 w-full py-3 bg-white hover:bg-indigo-50 text-indigo-600 rounded-xl font-black transition-all border-2 border-slate-100 shadow-sm flex items-center justify-center gap-2"
                       >
-                        Next Challenge →
+                        Try Another One <i className="fa-solid fa-arrow-right text-xs"></i>
                       </button>
                     )}
                   </div>
