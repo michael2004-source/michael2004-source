@@ -15,7 +15,5 @@ export const LANGUAGES: Language[] = [
 
 export const PLAYBACK_SPEEDS: PlaybackSpeed[] = [0.5, 0.75, 1.0, 1.5, 2.0];
 
-export const VOICES = ['Kore', 'Puck', 'Charon', 'Fenrir', 'Zephyr'];
-
 export const DEFAULT_MIN = 1;
 export const DEFAULT_MAX = 100;

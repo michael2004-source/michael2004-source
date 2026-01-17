@@ -21,14 +21,3 @@ export interface AudioConfig {
   playbackRate: number;
   voiceName: string;
 }
-
-/**
- * Result of the dental image analysis performed by Gemini.
- */
-export interface ImageAnalysisResult {
-  description: string;
-  is_teeth: boolean;
-  confidence_score: number;
-  imageUrl: string;
-  timestamp: number;
-}

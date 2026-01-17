@@ -14,7 +14,6 @@
             background-color: #f8fafc;
             margin: 0;
         }
-        /* Show a loading message while Babel transpiles the modules */
         #root:empty::after {
             content: "Initializing Polyglot Numbers...";
             display: flex;
@@ -26,6 +25,20 @@
             font-size: 1.125rem;
             letter-spacing: -0.025em;
         }
+        .boot-error {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff1f2;
+            color: #be123c;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            border: 1px solid #fecdd3;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            font-weight: 600;
+        }
     </style>
     <script>
       // Global shim for process.env
@@ -35,6 +48,17 @@
         },
         cwd: () => '/'
       };
+
+      // Error catching to help debug "Initializing" hangs
+      window.addEventListener('error', (event) => {
+        const root = document.getElementById('root');
+        if (root && root.innerHTML === '') {
+          const errDiv = document.createElement('div');
+          errDiv.className = 'boot-error';
+          errDiv.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-2"></i> Failed to load: ${event.message}`;
+          document.body.appendChild(errDiv);
+        }
+      });
     </script>
     <script type="importmap">
 {
@@ -52,6 +76,10 @@
 </head>
 <body>
     <div id="root"></div>
+    <!-- 
+      Using type="text/babel" with data-type="module" allows Babel Standalone 
+      to handle JSX/TSX transpilation and ESM imports simultaneously.
+    -->
     <script type="text/babel" data-type="module" src="./index.tsx"></script>
 </body>
 </html>
