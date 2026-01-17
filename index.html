@@ -12,6 +12,7 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
+            margin: 0;
         }
         /* Show a loading message while Babel transpiles the modules */
         #root:empty::after {
@@ -27,7 +28,7 @@
         }
     </style>
     <script>
-      // Global shim for process.env before any modules are loaded
+      // Global shim for process.env
       window.process = { 
         env: { 
           API_KEY: '' 
@@ -47,12 +48,10 @@
   }
 }
 </script>
-    <!-- Use Babel Standalone to transpile TSX in the browser for GitHub Pages -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
-    <!-- Babel handles fetching and transpiling the TSX entry point -->
     <script type="text/babel" data-type="module" src="./index.tsx"></script>
 </body>
 </html>
