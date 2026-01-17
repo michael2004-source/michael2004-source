@@ -1,5 +1,5 @@
 
-import { Language, PlaybackSpeed } from './types';
+import { Language, PlaybackSpeed } from './types.ts';
 
 export const LANGUAGES: Language[] = [
   { code: 'en-US', name: 'English', nativeName: 'English' },

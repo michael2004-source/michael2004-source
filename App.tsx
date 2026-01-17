@@ -1,11 +1,11 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Language, PlaybackSpeed, Stats, Feedback } from './types';
-import { LANGUAGES, DEFAULT_MIN, DEFAULT_MAX } from './constants';
-import SettingsPanel from './components/SettingsPanel';
-import StatsTracker from './components/StatsTracker';
-import { generateSpokenNumber } from './services/geminiService';
-import { decodeBase64, decodeAudioData } from './utils/audio';
+import { Language, PlaybackSpeed, Stats, Feedback } from './types.ts';
+import { LANGUAGES, DEFAULT_MIN, DEFAULT_MAX } from './constants.ts';
+import SettingsPanel from './components/SettingsPanel.tsx';
+import StatsTracker from './components/StatsTracker.tsx';
+import { generateSpokenNumber } from './services/geminiService.ts';
+import { decodeBase64, decodeAudioData } from './utils/audio.ts';
 
 const App: React.FC = () => {
   // Core Practice State
@@ -48,7 +48,6 @@ const App: React.FC = () => {
         await (window as any).aistudio.openSelectKey();
         setNeedsApiKey(false);
         setFeedback(null);
-        // Prompt for immediate start after key selection
         setFeedback({ type: 'info', message: 'API key updated. You can now start the round.' });
       }
     } catch (err) {
@@ -84,7 +83,6 @@ const App: React.FC = () => {
       const errorMessage = error?.message || "An unknown error occurred.";
       console.error("Round Start Error:", error);
       
-      // Handle the specific error indicating an API key issue or quota problem
       if (errorMessage.includes("Requested entity was not found") || 
           errorMessage.includes("API_KEY") || 
           errorMessage.includes("401") ||
@@ -162,7 +160,6 @@ const App: React.FC = () => {
     <div className="min-h-screen p-4 md:p-8 flex items-center justify-center bg-slate-50">
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Sidebar Settings */}
         <div className="lg:col-span-4 flex flex-col gap-6 lg:sticky lg:top-8">
           <div className="px-2">
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
@@ -199,12 +196,10 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Area */}
         <main className="lg:col-span-8 flex flex-col h-full">
           <StatsTracker stats={stats} />
 
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-white p-6 md:p-12 flex-1 flex flex-col justify-center items-center relative overflow-hidden">
-            {/* Background Accent */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 opacity-50 blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-50 rounded-full -ml-24 -mb-24 opacity-50 blur-3xl"></div>
 
@@ -223,9 +218,6 @@ const App: React.FC = () => {
                 >
                   Configure API Key
                 </button>
-                <div className="mt-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                  <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="hover:text-indigo-600 transition-colors">Billing Documentation ↗</a>
-                </div>
               </div>
             ) : !currentNumber && !isGenerating ? (
               <div className="py-12 relative z-10">
@@ -274,10 +266,10 @@ const App: React.FC = () => {
                       value={userInput}
                       onChange={(e) => setUserInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                      placeholder="Enter the digits..."
+                      placeholder="?"
                       disabled={isScored}
                       autoFocus
-                      className="w-full text-5xl font-black py-6 px-4 rounded-3xl border-2 border-slate-100 focus:border-indigo-500 focus:ring-[12px] focus:ring-indigo-50 outline-none text-center transition-all disabled:bg-slate-50 disabled:text-slate-300 placeholder:text-slate-200 placeholder:font-bold"
+                      className="w-full text-5xl font-black py-6 px-4 rounded-3xl border-2 border-slate-100 focus:border-indigo-500 focus:ring-[12px] focus:ring-indigo-50 outline-none text-center transition-all disabled:bg-slate-50 disabled:text-slate-300"
                     />
                   </div>
 
@@ -285,22 +277,22 @@ const App: React.FC = () => {
                     <button
                       onClick={startNewRound}
                       disabled={isGenerating}
-                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl transition-all active:scale-95"
+                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl transition-all"
                     >
                       Skip
                     </button>
                     <button
                       onClick={handleSubmit}
                       disabled={isScored || isGenerating || !userInput}
-                      className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-100 transition-all disabled:bg-slate-300 disabled:shadow-none active:scale-95"
+                      className="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-100 transition-all"
                     >
-                      Submit Answer
+                      Check Answer
                     </button>
                   </div>
                 </div>
 
                 {feedback && (
-                  <div className={`mt-10 p-6 rounded-3xl text-sm font-semibold animate-in fade-in zoom-in-95 duration-500 border-2 ${
+                  <div className={`mt-10 p-6 rounded-3xl text-sm font-semibold border-2 ${
                     feedback.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                     feedback.type === 'error' ? 'bg-rose-50 text-rose-700 border-rose-100' :
                     'bg-slate-50 text-slate-700 border-slate-100'

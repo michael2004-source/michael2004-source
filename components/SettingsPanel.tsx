@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { LANGUAGES, PLAYBACK_SPEEDS, VOICES } from '../constants';
-import { Language, PlaybackSpeed } from '../types';
+import { LANGUAGES, PLAYBACK_SPEEDS, VOICES } from '../constants.ts';
+import { Language, PlaybackSpeed } from '../types.ts';
 
 interface SettingsPanelProps {
   language: Language;
@@ -59,7 +59,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Minimum</label>
+            <label className="text-xs text-slate-400 mb-1 block">Min</label>
             <input
               type="number"
               value={min}
@@ -69,7 +69,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             />
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Maximum</label>
+            <label className="text-xs text-slate-400 mb-1 block">Max</label>
             <input
               type="number"
               value={max}
@@ -83,7 +83,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       <div>
         <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <i className="fa-solid fa-gauge-high"></i> Playback Speed
+          <i className="fa-solid fa-gauge-high"></i> Speed
         </h3>
         <div className="flex flex-wrap gap-2">
           {PLAYBACK_SPEEDS.map((s) => (

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Stats } from '../types';
+import { Stats } from '../types.ts';
 
 interface StatsTrackerProps {
   stats: Stats;
