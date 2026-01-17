@@ -15,6 +15,24 @@ export function getSystemVoices(): SpeechSynthesisVoice[] {
 }
 
 /**
+ * Utility to wait for voices to be loaded if they aren't available yet.
+ */
+export function waitForVoices(): Promise<SpeechSynthesisVoice[]> {
+  return new Promise((resolve) => {
+    let voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      resolve(voices);
+      return;
+    }
+    window.speechSynthesis.onvoiceschanged = () => {
+      voices = window.speechSynthesis.getVoices();
+      resolve(voices);
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  });
+}
+
+/**
  * Speaks the provided text using the browser's native TTS engine.
  */
 export function speakLocally({ text, lang, rate, voiceName }: TTSOptions): Promise<void> {
@@ -37,7 +55,12 @@ export function speakLocally({ text, lang, rate, voiceName }: TTSOptions): Promi
     utterance.onend = () => resolve();
     utterance.onerror = (event) => {
       console.error("SpeechSynthesis Error:", event);
-      reject(new Error("Local TTS failed. Your browser might not support this language or voice."));
+      // Silence errors if it's just 'interrupted' as it usually happens on rapid clicks
+      if ((event as any).error === 'interrupted') {
+        resolve();
+      } else {
+        reject(new Error("Local TTS failed. Your browser might not support this language or voice."));
+      }
     };
 
     window.speechSynthesis.speak(utterance);
