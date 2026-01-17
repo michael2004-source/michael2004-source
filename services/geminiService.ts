@@ -6,14 +6,10 @@ export async function generateSpokenNumber(
   languageName: string,
   voiceName: string = 'Kore'
 ): Promise<string> {
-  // Always use a fresh instance to ensure the latest API key is used
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Access the API key from the global shim
+  const apiKey = (window as any).process?.env?.API_KEY;
+  const ai = new GoogleGenAI({ apiKey });
   
-  /**
-   * The gemini-2.5-flash-preview-tts model is highly sensitive to prompts.
-   * If the prompt looks like a question or an instruction that 'needs' an answer, 
-   * it might return text. We use the recommended 'Say [Style]: [Content]' format.
-   */
   const prompt = `Say clearly: ${number} in ${languageName}`;
   
   try {
@@ -25,7 +21,6 @@ export async function generateSpokenNumber(
         }] 
       }],
       config: {
-        // System instruction is supported in config to guide model behavior
         systemInstruction: "You are a specialized text-to-speech engine. Your only output is the spoken audio of the requested text. Never output text characters or descriptions.",
         responseModalities: [Modality.AUDIO],
         speechConfig: {
@@ -36,7 +31,6 @@ export async function generateSpokenNumber(
       },
     });
 
-    // Extracting audio from candidates
     const parts = response.candidates?.[0]?.content?.parts;
     const audioPart = parts?.find(p => p.inlineData);
     const textPart = parts?.find(p => p.text);
