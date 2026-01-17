@@ -40,25 +40,31 @@
             font-weight: 600;
             max-width: 90%;
             white-space: pre-wrap;
-            font-family: sans-serif;
+            font-family: monospace;
+            font-size: 13px;
         }
     </style>
     <script>
-      // Global shim for process.env
       window.process = { 
-        env: { 
-          API_KEY: '' 
-        },
+        env: { API_KEY: '' },
         cwd: () => '/'
       };
 
-      // Catch errors immediately to help diagnose boot issues on remote hosts
       window.onerror = function(message, source, lineno, colno, error) {
         const root = document.getElementById('root');
         if (root && root.innerHTML === '') {
           const errDiv = document.createElement('div');
           errDiv.className = 'boot-error';
-          errDiv.innerHTML = `<div style="margin-bottom: 8px"><i class="fa-solid fa-circle-exclamation mr-2"></i> Application failed to start</div><div style="font-size: 12px; font-family: monospace; opacity: 0.8">${message}</div>`;
+          errDiv.innerHTML = `
+            <div style="font-weight:bold; margin-bottom:8px">
+              <i class="fa-solid fa-circle-exclamation mr-2"></i> Application Boot Error
+            </div>
+            <div style="opacity:0.8">
+              ${message}<br/>
+              File: ${source?.split('/').pop() || 'unknown'}<br/>
+              Line: ${lineno}
+            </div>
+          `;
           document.body.appendChild(errDiv);
         }
       };
@@ -75,21 +81,28 @@
   }
 }
 </script>
-    <!-- Babel standalone must be loaded before our index.tsx -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
 </head>
 <body>
     <div id="root"></div>
     <!-- 
-      Using type="text/babel" allows Babel Standalone to transpile JSX/TSX.
-      data-type="module" is essential for the browser to respect the importmap.
-      data-presets ensures React 19 and TypeScript are handled correctly.
+      Using type="text/babel" + data-type="module" tells Babel to transpile 
+      this script and its relative imports (like App.tsx) as ES modules.
     -->
-    <script 
-      type="text/babel" 
-      data-type="module" 
-      data-presets="react,typescript" 
-      src="index.tsx"
-    ></script>
+    <script type="text/babel" data-type="module" data-presets="react,typescript">
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+      import App from './App.tsx';
+
+      const container = document.getElementById('root');
+      if (container) {
+        const root = createRoot(container);
+        root.render(
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>
+        );
+      }
+    </script>
 </body>
 </html>
