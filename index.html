@@ -40,6 +40,7 @@
             font-weight: 600;
             max-width: 90%;
             white-space: pre-wrap;
+            font-family: sans-serif;
         }
     </style>
     <script>
@@ -51,16 +52,16 @@
         cwd: () => '/'
       };
 
-      // Enhanced error reporting for GitHub Pages
-      window.addEventListener('error', (event) => {
+      // Catch errors immediately to help diagnose boot issues on remote hosts
+      window.onerror = function(message, source, lineno, colno, error) {
         const root = document.getElementById('root');
         if (root && root.innerHTML === '') {
           const errDiv = document.createElement('div');
           errDiv.className = 'boot-error';
-          errDiv.innerHTML = `<div style="margin-bottom: 8px"><i class="fa-solid fa-circle-exclamation mr-2"></i> Application failed to start</div><div style="font-size: 12px; font-family: monospace; opacity: 0.8">${event.message}</div>`;
+          errDiv.innerHTML = `<div style="margin-bottom: 8px"><i class="fa-solid fa-circle-exclamation mr-2"></i> Application failed to start</div><div style="font-size: 12px; font-family: monospace; opacity: 0.8">${message}</div>`;
           document.body.appendChild(errDiv);
         }
-      });
+      };
     </script>
     <script type="importmap">
 {
@@ -81,15 +82,14 @@
     <div id="root"></div>
     <!-- 
       Using type="text/babel" allows Babel Standalone to transpile JSX/TSX.
-      data-type="module" tells Babel to treat this as an ES module, 
-      respecting the import map for non-relative imports.
-      data-presets ensures React and TypeScript features are available.
+      data-type="module" is essential for the browser to respect the importmap.
+      data-presets ensures React 19 and TypeScript are handled correctly.
     -->
     <script 
       type="text/babel" 
       data-type="module" 
       data-presets="react,typescript" 
-      src="./index.tsx"
+      src="index.tsx"
     ></script>
 </body>
 </html>
