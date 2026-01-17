@@ -1,7 +1,8 @@
 
-import React from 'react';
-import { LANGUAGES, PLAYBACK_SPEEDS, VOICES } from '../constants.ts';
+import React, { useEffect, useState } from 'react';
+import { LANGUAGES, PLAYBACK_SPEEDS } from '../constants.ts';
 import { Language, PlaybackSpeed } from '../types.ts';
+import { getSystemVoices } from '../services/ttsService.ts';
 
 interface SettingsPanelProps {
   language: Language;
@@ -12,7 +13,7 @@ interface SettingsPanelProps {
   onMaxChange: (val: number) => void;
   speed: PlaybackSpeed;
   onSpeedChange: (val: PlaybackSpeed) => void;
-  voice: string;
+  selectedVoiceName: string;
   onVoiceChange: (val: string) => void;
   isGenerating: boolean;
 }
@@ -26,15 +27,41 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onMaxChange,
   speed,
   onSpeedChange,
-  voice,
+  selectedVoiceName,
   onVoiceChange,
   isGenerating,
 }) => {
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = getSystemVoices();
+      // Filter voices by selected language prefix AND restrict to Google voices only
+      const filtered = voices.filter(v => 
+        v.lang.toLowerCase().startsWith(language.code.split('-')[0].toLowerCase()) &&
+        v.name.toLowerCase().includes('google')
+      );
+      setAvailableVoices(filtered);
+      
+      // Auto-select the first available Google voice if none selected or if language changed
+      if (filtered.length > 0 && (!selectedVoiceName || !filtered.find(v => v.name === selectedVoiceName))) {
+        onVoiceChange(filtered[0].name);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, [language, onVoiceChange, selectedVoiceName]);
+
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-6">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-6 animate-in fade-in slide-in-from-left-4 duration-500">
       <div>
         <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <i className="fa-solid fa-earth-americas"></i> Language
+          <i className="fa-solid fa-earth-americas text-indigo-500"></i> Target Language
         </h3>
         <select
           value={language.code}
@@ -43,11 +70,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             if (selected) onLanguageChange(selected);
           }}
           disabled={isGenerating}
-          className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-50"
+          className="w-full p-3 border-2 border-slate-100 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236366f1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E')] bg-[length:12px_12px] bg-[right_1rem_center] bg-no-repeat"
         >
           {LANGUAGES.map((l) => (
             <option key={l.code} value={l.code}>
-              {l.name} ({l.nativeName})
+              {l.nativeName} ({l.name})
             </option>
           ))}
         </select>
@@ -55,27 +82,27 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       <div>
         <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <i className="fa-solid fa-arrows-left-right"></i> Number Range
+          <i className="fa-solid fa-arrows-left-right text-indigo-500"></i> Difficulty Range
         </h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Min</label>
+            <label className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-tighter">Min</label>
             <input
               type="number"
               value={min}
               onChange={(e) => onMinChange(parseInt(e.target.value) || 0)}
               disabled={isGenerating}
-              className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50"
+              className="w-full p-3 bg-slate-50 border-2 border-slate-50 rounded-xl focus:border-indigo-500 focus:bg-white outline-none transition-all disabled:opacity-50"
             />
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Max</label>
+            <label className="text-[10px] font-bold text-slate-400 mb-1 block uppercase tracking-tighter">Max</label>
             <input
               type="number"
               value={max}
               onChange={(e) => onMaxChange(parseInt(e.target.value) || 0)}
               disabled={isGenerating}
-              className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50"
+              className="w-full p-3 bg-slate-50 border-2 border-slate-50 rounded-xl focus:border-indigo-500 focus:bg-white outline-none transition-all disabled:opacity-50"
             />
           </div>
         </div>
@@ -83,17 +110,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       <div>
         <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <i className="fa-solid fa-gauge-high"></i> Speed
+          <i className="fa-solid fa-gauge-high text-indigo-500"></i> Speed
         </h3>
         <div className="flex flex-wrap gap-2">
           {PLAYBACK_SPEEDS.map((s) => (
             <button
               key={s}
               onClick={() => onSpeedChange(s)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+              className={`flex-1 min-w-[50px] py-2 rounded-xl text-xs font-bold transition-all border-2 ${
                 speed === s
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100'
+                  : 'bg-white text-slate-500 border-slate-100 hover:border-indigo-200'
               }`}
             >
               {s}x
@@ -104,19 +131,27 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       <div>
         <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <i className="fa-solid fa-microphone-lines"></i> Voice Style
+          <i className="fa-solid fa-microphone-lines text-indigo-500"></i> Google Voice
         </h3>
         <select
-          value={voice}
+          value={selectedVoiceName}
           onChange={(e) => onVoiceChange(e.target.value)}
-          className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+          disabled={isGenerating || availableVoices.length === 0}
+          className="w-full p-3 border-2 border-slate-100 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236366f1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E')] bg-[length:12px_12px] bg-[right_1rem_center] bg-no-repeat"
         >
-          {VOICES.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
+          {availableVoices.length === 0 ? (
+            <option>No Google voices found</option>
+          ) : (
+            availableVoices.map((v) => (
+              <option key={v.name} value={v.name}>
+                {v.name}
+              </option>
+            ))
+          )}
         </select>
+        <p className="mt-2 text-[10px] text-slate-400 leading-tight">
+          Restrictive mode: Only high-quality Google voices are shown for the selected language.
+        </p>
       </div>
     </div>
   );
