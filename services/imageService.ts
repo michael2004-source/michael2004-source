@@ -2,9 +2,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ImageAnalysisResult } from "../types.ts";
 
+/**
+ * Analyzes an image URL using Gemini 3 Flash to detect dental anatomy.
+ */
 export async function analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
-  const apiKey = (window as any).process?.env?.API_KEY;
-  const ai = new GoogleGenAI({ apiKey });
+  // Fix: Directly use process.env.API_KEY for SDK initialization
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   // 1. Fetch the image and convert to base64
   let base64Data: string;
@@ -69,6 +72,7 @@ export async function analyzeImage(imageUrl: string): Promise<ImageAnalysisResul
       },
     });
 
+    // Fix: Access the .text property directly (it is not a method)
     const resultText = response.text;
     if (!resultText) throw new Error("No response from AI model.");
 

@@ -1,8 +1,7 @@
 {
   "name": "Polyglot Number Master",
-  "description": "An interactive tool to master auditory number comprehension across multiple languages using Gemini TTS. Features range customization, playback speed control, and anti-cheat progress tracking.",
+  "description": "An interactive tool to master auditory number comprehension across multiple languages using high-quality system voices.",
   "requestFramePermissions": [
-    "microphone",
-    "camera"
+    "microphone"
   ]
 }
