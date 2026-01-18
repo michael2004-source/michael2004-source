@@ -26,13 +26,16 @@ export async function generateSpeech(text: string, voice: string, language: stri
   try {
     const genAI = getAi();
     
-    // The `text` parameter is now pre-translated words. The TTS model simply
-    // speaks this text using the selected voice. No complex instructions are needed.
+    // By providing a clear, instructional context like "Say the number:", we reduce the
+    // ambiguity of sending isolated words in various languages. This helps prevent the
+    // model's safety filters from being incorrectly triggered, which is a common
+    // cause of failure for non-English content.
+    const prompt = `Say the number: ${text}`;
+
     const response = await genAI.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: text }] }],
+      contents: [{ parts: [{ text: prompt }] }],
       config: {
-        // The unsupported `systemInstruction` has been removed to fix the 500 error.
         responseModalities: [Modality.AUDIO],
         speechConfig: {
           voiceConfig: {

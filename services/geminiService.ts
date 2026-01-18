@@ -23,12 +23,19 @@ export async function translateNumberToWords(number: number, language: string): 
     try {
         const genAI = getAi();
         const model = 'gemini-3-flash-preview';
-        // A detailed prompt to ensure the model returns only the translated number.
-        const prompt = `Convert the number ${number} into words in ${language}. Only return the number in words. For example, if the number is 42 and the language is French, you should only return "quarante-deux". Do not add any other text, punctuation, or explanation.`;
+        
+        // Using a system instruction provides a stronger context for the model,
+        // making it more reliable at following the language and formatting constraints.
+        const systemInstruction = `You are a number-to-word translator. You will be given a number and you must respond with the number written out in ${language}. You must only return the words for the number and nothing else. No punctuation, no explanations. For example, if you are asked for 42 in French, your response should be exactly "quarante-deux".`;
+        
+        const prompt = `${number}`;
 
         const response = await genAI.models.generateContent({
             model: model,
-            contents: prompt
+            contents: prompt,
+            config: {
+                systemInstruction: systemInstruction,
+            }
         });
         
         const text = response.text?.trim();
@@ -38,8 +45,8 @@ export async function translateNumberToWords(number: number, language: string): 
             throw new Error("Failed to translate number: Gemini API returned an empty response.");
         }
         
-        // Remove potential markdown or quotes from the model's response.
-        return text.replace(/[`"']/g, '');
+        // Remove potential markdown or quotes and normalize to lowercase.
+        return text.replace(/[`"']/g, '').toLowerCase();
 
     } catch (error) {
         console.error(`Error translating number ${number} to ${language}:`, error);
