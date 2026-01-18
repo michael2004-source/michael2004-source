@@ -1,2 +1,2 @@
 
-export const analyzeImage = async () => { throw new Error("Service removed"); };
+// This file has been removed as it was unused.

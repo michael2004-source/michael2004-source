@@ -1,3 +1,2 @@
 
-// This file is no longer needed with Web Speech API.
-export {};
+// This file has been removed as it was unused.

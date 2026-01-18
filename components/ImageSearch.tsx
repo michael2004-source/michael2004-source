@@ -1,2 +1,2 @@
 
-export default function ImageSearch() { return null; }
+// This file has been removed as it was unused.
