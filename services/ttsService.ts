@@ -1,13 +1,10 @@
-
 import { GoogleGenAI, Modality } from "@google/genai";
 
 let ai: GoogleGenAI | null = null;
 
 const getAi = () => {
     if (!ai) {
-        if (!process.env.API_KEY) {
-            throw new Error("API_KEY environment variable not set.");
-        }
+        // FIX: Per coding guidelines, the API key must be obtained exclusively from `process.env.API_KEY`.
         ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     }
     return ai;

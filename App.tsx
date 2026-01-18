@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Stats, GameStatus } from './types.ts';
 import { DEFAULT_SETTINGS } from './constants.ts';
@@ -41,7 +40,8 @@ const App: React.FC = () => {
       const audioContent = await generateSpeech(String(currentNumber), settings.language.voice);
       await playAudio(audioContent);
     } catch (error) {
-      alert("Failed to generate audio. Please check your API key and network connection.");
+      // FIX: Per coding guidelines, do not mention API keys in UI elements or error messages.
+      alert("Failed to generate audio. Please check your network connection and try again.");
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
