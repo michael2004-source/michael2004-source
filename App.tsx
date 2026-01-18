@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Stats, GameStatus } from './types.ts';
 import { DEFAULT_SETTINGS } from './constants.ts';
+import { generateSpeech } from './services/ttsService.ts';
+import { playAudio } from './utils/audio.ts';
 import StatsTracker from './components/StatsTracker.tsx';
 import SettingsPanel from './components/SettingsPanel.tsx';
 
@@ -31,28 +33,20 @@ const App: React.FC = () => {
     generateNewNumber();
   }, [generateNewNumber]);
 
-  const handlePlaySound = useCallback(() => {
-    if (currentNumber === null || window.speechSynthesis.speaking) {
-      return;
-    }
-
+  const handlePlaySound = useCallback(async () => {
+    if (currentNumber === null) return;
     setIsLoading(true);
-    const utterance = new SpeechSynthesisUtterance(String(currentNumber));
-    utterance.lang = settings.language.code;
-    
-    utterance.onend = () => {
+    try {
+      const audioContent = await generateSpeech(String(currentNumber), settings.language.voice);
+      await playAudio(audioContent);
+    } catch (error) {
+      // FIX: Per coding guidelines, do not mention API keys in UI elements or error messages.
+      alert("Failed to generate audio. Please check your network connection and try again.");
+    } finally {
       setIsLoading(false);
       inputRef.current?.focus();
-    };
-    
-    utterance.onerror = (event) => {
-      console.error('Browser TTS error:', event);
-      setIsLoading(false);
-      alert("Sorry, an error occurred with the text-to-speech service. Your browser may not support the selected language.");
-    };
-    
-    window.speechSynthesis.speak(utterance);
-  }, [currentNumber, settings.language.code]);
+    }
+  }, [currentNumber, settings.language.voice]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
