@@ -1,14 +1,13 @@
-
 import { Settings, Language } from './types.ts';
 
 export const SUPPORTED_LANGUAGES: Language[] = [
-  { code: 'en-US', name: 'English (US)', voice: 'Zephyr' },
-  { code: 'es-ES', name: 'Spanish', voice: 'Puck' },
-  { code: 'fr-FR', name: 'French', voice: 'Charon' },
-  { code: 'de-DE', name: 'German', voice: 'Kore' },
-  { code: 'ja-JP', name: 'Japanese', voice: 'Fenrir' },
-  { code: 'it-IT', name: 'Italian', voice: 'Puck' }, // Using available voices
-  { code: 'pt-BR', name: 'Portuguese', voice: 'Puck' } // Using available voices
+  { code: 'en-US', name: 'English (US)' },
+  { code: 'es-ES', name: 'Spanish' },
+  { code: 'fr-FR', name: 'French' },
+  { code: 'de-DE', name: 'German' },
+  { code: 'ja-JP', name: 'Japanese' },
+  { code: 'it-IT', name: 'Italian' },
+  { code: 'pt-BR', name: 'Portuguese' }
 ];
 
 export const DEFAULT_SETTINGS: Settings = {
