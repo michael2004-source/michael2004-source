@@ -8,7 +8,7 @@ export default defineConfig({
   // IMPORTANT: Replace <YOUR_REPO_NAME> with the name of your GitHub repository.
   // For example, if your repo URL is https://github.com/john-doe/polyglot-numbers,
   // the base should be '/polyglot-numbers/'.
-  base: '/',
+  base: '/<YOUR_REPO_NAME>/',
   build: {
     target: 'esnext'
   }
