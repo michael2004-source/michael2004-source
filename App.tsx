@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Stats, GameStatus } from './types.ts';
 import { DEFAULT_SETTINGS } from './constants.ts';
+import { translateNumberToWords } from './services/geminiService.ts';
 import { generateSpeech } from './services/ttsService.ts';
 import { playAudio } from './utils/audio.ts';
 import StatsTracker from './components/StatsTracker.tsx';
@@ -38,15 +39,23 @@ const App: React.FC = () => {
     if (currentNumber === null) return;
     setIsLoading(true);
     try {
-      // FIX: Pass the language name to the service to ensure the model speaks in the correct language
+      // 1. Translate the number into words in the target language.
+      const numberAsWords = await translateNumberToWords(currentNumber, settings.language.name);
+
+      // 2. Use the translated words to generate speech.
       const audioContent = await generateSpeech(
-        String(currentNumber), 
+        numberAsWords, 
         settings.language.voice, 
         settings.language.name
       );
       await playAudio(audioContent);
     } catch (error) {
-      alert("Failed to generate audio. Please check your network connection and try again.");
+      // More specific error reporting to help diagnose environment issues.
+      if (error instanceof Error) {
+        alert(`Failed to generate audio: ${error.message}`);
+      } else {
+        alert("An unknown error occurred while generating audio.");
+      }
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();

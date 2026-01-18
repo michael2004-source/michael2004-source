@@ -3,7 +3,10 @@ import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  // FIX: The reference to Node.js types was causing an error, and `process.cwd()`
+  // is not available without it. Replacing `process.cwd()` with `''` works because
+  // `loadEnv` resolves an empty string for the directory to the current working directory.
+  const env = loadEnv(mode, '', '');
   return {
     plugins: [react()],
     // Use a relative base path. This is a robust way to ensure all assets

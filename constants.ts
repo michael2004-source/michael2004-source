@@ -2,7 +2,7 @@
 import { Settings, Language } from './types.ts';
 
 export const SUPPORTED_LANGUAGES: Language[] = [
-  { code: 'en-US', name: 'English (US)', voice: 'Zephyr' },
+  { code: 'en-US', name: 'English', voice: 'Zephyr' },
   { code: 'es-ES', name: 'Spanish', voice: 'Puck' },
   { code: 'fr-FR', name: 'French', voice: 'Charon' },
   { code: 'de-DE', name: 'German', voice: 'Kore' },
