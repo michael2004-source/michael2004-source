@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Stats, GameStatus } from './types.ts';
 import { DEFAULT_SETTINGS } from './constants.ts';
@@ -37,16 +38,20 @@ const App: React.FC = () => {
     if (currentNumber === null) return;
     setIsLoading(true);
     try {
-      const audioContent = await generateSpeech(String(currentNumber), settings.language.voice);
+      // FIX: Pass the language name to the service to ensure the model speaks in the correct language
+      const audioContent = await generateSpeech(
+        String(currentNumber), 
+        settings.language.voice, 
+        settings.language.name
+      );
       await playAudio(audioContent);
     } catch (error) {
-      // FIX: Per coding guidelines, do not mention API keys in UI elements or error messages.
       alert("Failed to generate audio. Please check your network connection and try again.");
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
     }
-  }, [currentNumber, settings.language.voice]);
+  }, [currentNumber, settings.language.voice, settings.language.name]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
