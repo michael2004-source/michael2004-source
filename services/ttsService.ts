@@ -1,11 +1,18 @@
+
 import { GoogleGenAI, Modality } from "@google/genai";
 
 let ai: GoogleGenAI | null = null;
 
 const getAi = () => {
     if (!ai) {
-        // FIX: Per coding guidelines, the API key must be obtained exclusively from `process.env.API_KEY`.
-        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        // FIX: Per coding guidelines, the API key must be obtained from process.env.API_KEY. This resolves the error "Property 'env' does not exist on type 'ImportMeta'".
+        const apiKey = process.env.API_KEY;
+
+        if (!apiKey) {
+            // This error will be visible in the browser console if the key is missing.
+            throw new Error("API_KEY environment variable is not set.");
+        }
+        ai = new GoogleGenAI({ apiKey });
     }
     return ai;
 }
