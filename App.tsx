@@ -3,8 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Stats, GameStatus } from './types.ts';
 import { DEFAULT_SETTINGS } from './constants.ts';
 import { translateNumberToWords } from './services/geminiService.ts';
-import { generateSpeech } from './services/ttsService.ts';
-import { playAudio } from './utils/audio.ts';
+import { speak } from './services/ttsService.ts';
 import StatsTracker from './components/StatsTracker.tsx';
 import SettingsPanel from './components/SettingsPanel.tsx';
 
@@ -24,7 +23,10 @@ const App: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const generateNewNumber = useCallback(() => {
-    const newNumber = getRandomNumber(settings.min, settings.max);
+    // Ensure min is not greater than max before generating
+    const min = Math.min(settings.min, settings.max);
+    const max = Math.max(settings.min, settings.max);
+    const newNumber = getRandomNumber(min, max);
     setCurrentNumber(newNumber);
     setUserGuess('');
     setStatus('idle');
@@ -39,28 +41,23 @@ const App: React.FC = () => {
     if (currentNumber === null) return;
     setIsLoading(true);
     try {
-      // 1. Translate the number into words in the target language.
-      const numberAsWords = await translateNumberToWords(currentNumber, settings.language.name);
+      // 1. Translate number to words using browser's Intl API
+      const numberAsWords = translateNumberToWords(currentNumber, settings.language.code);
+      
+      // 2. Use Web Speech API to speak the words
+      await speak(numberAsWords, settings.language.code);
 
-      // 2. Use the translated words to generate speech.
-      const audioContent = await generateSpeech(
-        numberAsWords, 
-        settings.language.voice, 
-        settings.language.name
-      );
-      await playAudio(audioContent);
     } catch (error) {
-      // More specific error reporting to help diagnose environment issues.
       if (error instanceof Error) {
-        alert(`Failed to generate audio: ${error.message}`);
+          alert(`Failed to play audio: ${error.message}`);
       } else {
-        alert("An unknown error occurred while generating audio.");
+          alert("An unknown error occurred while playing audio.");
       }
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
     }
-  }, [currentNumber, settings.language.voice, settings.language.name]);
+  }, [currentNumber, settings.language.code]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,28 +84,21 @@ const App: React.FC = () => {
     }
   };
 
-  const statusStyles: Record<GameStatus, { border: string; icon: string; iconColor: string; bg: string }> = {
-    idle: { border: 'border-slate-300', icon: 'fa-volume-high', iconColor: 'text-slate-500', bg: 'bg-white' },
-    correct: { border: 'border-emerald-500', icon: 'fa-check-circle', iconColor: 'text-emerald-500', bg: 'bg-emerald-50' },
-    incorrect: { border: 'border-rose-500', icon: 'fa-times-circle', iconColor: 'text-rose-500', bg: 'bg-rose-50' },
-  };
-
-  const currentStyle = statusStyles[status];
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 space-y-8">
       <div className="text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-slate-800">French Number Master</h1>
-        <p className="text-slate-600 mt-2">Train your ears to numbers in French.</p>
+        <h1 className="text-4xl md:text-5xl font-bold text-slate-800">Spoken Number Practice</h1>
+        <p className="text-slate-600 mt-2">Train your ears to numbers in different languages.</p>
       </div>
 
-      <div className={`relative w-full max-w-xl p-8 transition-all duration-300 rounded-2xl shadow-lg border-2 ${currentStyle.border} ${currentStyle.bg}`}>
+      <div className={`relative w-full max-w-xl p-8 transition-all duration-300 rounded-2xl shadow-lg border-2 ${status === 'correct' ? 'border-emerald-500 bg-emerald-50' : status === 'incorrect' ? 'border-rose-500 bg-rose-50' : 'border-slate-300 bg-white'}`}>
         <button onClick={() => setIsSettingsOpen(true)} className="absolute top-4 right-4 text-slate-400 hover:text-indigo-600 transition">
           <i className="fas fa-cog fa-lg"></i>
         </button>
 
-        <div className="flex justify-center items-center mb-6">
-            <p className="font-semibold text-slate-700">Range: <span className="text-indigo-600">{settings.min} - {settings.max}</span></p>
+        <div className="flex justify-center items-center mb-6 text-center flex-wrap gap-2">
+            <div className="bg-slate-200 text-slate-700 text-sm font-semibold px-3 py-1 rounded-full">{settings.language.name}</div>
+            <div className="bg-slate-200 text-slate-700 text-sm font-semibold px-3 py-1 rounded-full">{settings.min} - {settings.max}</div>
         </div>
 
         <div className="text-center my-8">

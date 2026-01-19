@@ -1,69 +1,60 @@
 
-import { GoogleGenAI, Modality } from "@google/genai";
-
-let ai: GoogleGenAI | null = null;
-
-const getAi = () => {
-    if (!ai) {
-        // The API key is injected via Vite's `define` config as process.env.API_KEY
-        const apiKey = process.env.API_KEY;
-
-        if (!apiKey) {
-            throw new Error("API_KEY environment variable is not set.");
-        }
-        ai = new GoogleGenAI({ apiKey });
-    }
-    return ai;
-}
-
 /**
- * Generates speech for a given text (number) in a specific language using Gemini TTS.
- * @param text The pre-translated text to speak (e.g., "quarante-deux").
- * @param voice The specific voice to use.
- * @param language The name of the language (e.g., "Japanese", "French"), for logging.
+ * Speaks a given text using the browser's Web Speech API.
+ * This is wrapped in a promise to make it easier to use with async/await
+ * and to handle loading states correctly.
+ * @param text The text to speak.
+ * @param lang The BCP 47 language tag (e.g., "fr-FR").
+ * @returns A promise that resolves when speech has finished, or rejects on error.
  */
-export async function generateSpeech(text: string, voice: string, language: string): Promise<string> {
-  try {
-    const genAI = getAi();
-    
-    // By providing a clear, instructional context like "Say the number:", we reduce the
-    // ambiguity of sending isolated words in various languages. This helps prevent the
-    // model's safety filters from being incorrectly triggered, which is a common
-    // cause of failure for non-English content.
-    const prompt = `Say the number: ${text}`;
+export function speak(text: string, lang: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (!window.speechSynthesis) {
+            reject(new Error("Your browser does not support the Web Speech API. Try Chrome or Firefox."));
+            return;
+        }
 
-    const response = await genAI.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: prompt }] }],
-      config: {
-        responseModalities: [Modality.AUDIO],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: voice },
-          },
-        },
-      },
+        const speakUtterance = (allVoices: SpeechSynthesisVoice[]) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+
+            // --- Voice Selection Logic ---
+            const baseLang = lang.split('-')[0];
+            const candidateVoices = allVoices.filter(v => v.lang === lang || v.lang.startsWith(baseLang));
+
+            // Score voices to find the best one
+            const getVoiceScore = (voice: SpeechSynthesisVoice) => {
+                let score = 0;
+                if (voice.lang === lang) score += 4; // Exact language match is best
+                if (voice.name.toLowerCase().includes('google')) score += 3; // Prefer Google voices
+                if (!voice.localService) score += 2; // Prefer network voices
+                if (voice.default) score += 1; // Default is a good sign
+                return score;
+            };
+
+            // Find the best voice from the candidates
+            if (candidateVoices.length > 0) {
+                const bestVoice = candidateVoices.sort((a, b) => getVoiceScore(b) - getVoiceScore(a))[0];
+                utterance.voice = bestVoice;
+            }
+            // If no specific voice is found, the browser will use its default for the specified lang.
+
+            utterance.onend = () => resolve();
+            utterance.onerror = (event) => reject(new Error(`Speech synthesis error: ${event.error}`));
+            
+            window.speechSynthesis.cancel(); // Cancel any ongoing speech
+            window.speechSynthesis.speak(utterance);
+        };
+        
+        // Voices may load asynchronously.
+        let voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            speakUtterance(voices);
+        } else {
+            window.speechSynthesis.onvoiceschanged = () => {
+                voices = window.speechSynthesis.getVoices();
+                speakUtterance(voices);
+            };
+        }
     });
-
-    // Find the audio part robustly, as it may not be the first part in the array.
-    const audioPart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData && part.inlineData.data);
-    const base64Audio = audioPart?.inlineData?.data;
-
-    if (base64Audio) {
-      return base64Audio;
-    } else {
-      // Check if there was text returned instead of audio and throw a more specific error.
-      const textPart = response.candidates?.[0]?.content?.parts?.find(p => p.text)?.text;
-      if (textPart) {
-        throw new Error(`Model returned text instead of audio: ${textPart}`);
-      }
-      // Log the full response for better debugging if no audio or text is found.
-      console.error("Full API Response on failure:", JSON.stringify(response, null, 2));
-      throw new Error("No audio data received from API. Check console for full response.");
-    }
-  } catch (error) {
-    console.error("Error generating speech:", error);
-    // Re-throwing the error so it can be caught by the UI
-    throw error;
-  }
 }

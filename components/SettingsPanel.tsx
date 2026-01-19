@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Settings } from '../types.ts';
+import { Settings, Language } from '../types.ts';
+import { SUPPORTED_LANGUAGES } from '../constants.ts';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -13,29 +14,68 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, settings, onSetti
   if (!isOpen) return null;
 
   const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    onSettingsChange({ ...settings, [name]: Math.max(0, parseInt(value, 10)) });
+    let { name, value } = e.target;
+    let newMin = settings.min;
+    let newMax = settings.max;
+    const intValue = parseInt(value, 10) || 0;
+
+    if (name === 'min') {
+        newMin = Math.max(0, intValue);
+        if (newMin > newMax) {
+            newMax = newMin;
+        }
+    } else if (name === 'max') {
+        newMax = Math.max(0, intValue);
+        if (newMax < newMin) {
+            newMin = newMax;
+        }
+    }
+    onSettingsChange({ ...settings, min: newMin, max: newMax });
+  };
+  
+  const handleLanguageChange = (newLanguage: Language) => {
+    onSettingsChange({ ...settings, language: newLanguage });
   };
 
   return (
     <div 
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div 
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md"
+        className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-slate-800">Settings</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <i className="fas fa-times fa-lg"></i>
           </button>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-2">
+            <label className="block text-sm font-medium text-slate-600 mb-3">
+                Language
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {SUPPORTED_LANGUAGES.map(lang => (
+                    <button
+                        key={lang.code}
+                        onClick={() => handleLanguageChange(lang)}
+                        className={`text-center p-3 rounded-lg font-semibold transition-all duration-200 ${
+                            settings.language.code === lang.code
+                                ? 'bg-indigo-600 text-white shadow-md ring-2 ring-offset-2 ring-indigo-500'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:scale-105'
+                        }`}
+                    >
+                        {lang.name}
+                    </button>
+                ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600 mb-3">
               Number Range
             </label>
             <div className="flex items-center space-x-4">
@@ -44,16 +84,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, settings, onSetti
                 name="min"
                 value={settings.min}
                 onChange={handleRangeChange}
-                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
                 placeholder="Min"
               />
-              <span className="text-slate-500">to</span>
+              <span className="text-slate-500 font-semibold">to</span>
               <input
                 type="number"
                 name="max"
                 value={settings.max}
                 onChange={handleRangeChange}
-                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
                 placeholder="Max"
               />
             </div>
