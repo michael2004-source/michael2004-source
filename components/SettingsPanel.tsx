@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Settings } from '../types.ts';
-import { SUPPORTED_LANGUAGES } from '../constants.ts';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -12,11 +11,6 @@ interface SettingsPanelProps {
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, settings, onSettingsChange, onClose }) => {
   if (!isOpen) return null;
-
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newLanguage = SUPPORTED_LANGUAGES.find(lang => lang.code === e.target.value) || settings.language;
-    onSettingsChange({ ...settings, language: newLanguage });
-  };
 
   const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -40,21 +34,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, settings, onSetti
         </div>
 
         <div className="space-y-6">
-          <div>
-            <label htmlFor="language" className="block text-sm font-medium text-slate-600 mb-2">
-              Practice Language
-            </label>
-            <select
-              id="language"
-              value={settings.language.code}
-              onChange={handleLanguageChange}
-              className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              {SUPPORTED_LANGUAGES.map(lang => (
-                <option key={lang.code} value={lang.code}>{lang.name}</option>
-              ))}
-            </select>
-          </div>
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-2">
               Number Range

@@ -98,8 +98,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 space-y-8">
       <div className="text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-slate-800">Polyglot Number Master</h1>
-        <p className="text-slate-600 mt-2">Train your ears to numbers in new languages.</p>
+        <h1 className="text-4xl md:text-5xl font-bold text-slate-800">French Number Master</h1>
+        <p className="text-slate-600 mt-2">Train your ears to numbers in French.</p>
       </div>
 
       <div className={`relative w-full max-w-xl p-8 transition-all duration-300 rounded-2xl shadow-lg border-2 ${currentStyle.border} ${currentStyle.bg}`}>
@@ -107,8 +107,7 @@ const App: React.FC = () => {
           <i className="fas fa-cog fa-lg"></i>
         </button>
 
-        <div className="flex justify-between items-center mb-6">
-            <p className="font-semibold text-slate-700">Language: <span className="text-indigo-600">{settings.language.name}</span></p>
+        <div className="flex justify-center items-center mb-6">
             <p className="font-semibold text-slate-700">Range: <span className="text-indigo-600">{settings.min} - {settings.max}</span></p>
         </div>
 
